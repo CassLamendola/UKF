@@ -92,6 +92,13 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       float y = p_x * sin(p_y);
       x_ << x, y, 0, 0, 0;
     }
+
+    //initial state covariance matrix P  
+    P_ << 1,   0,    0,   0,   0,
+          0,   1,    0,   0,   0,
+          0,   0,    1,   0,   0,
+          0,   0,    0,   1,   0,
+          0,   0,    0,   0,   1;
   }
   is_initialized_ = true;
 
@@ -100,6 +107,16 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
   // Call Prediction step
   Prediction(delta_t);
+
+  // Call Update step
+  if (use_laser_ && meas_package.sensor_type_ == MeasurementPackage::LASER)
+  {
+    UpdateLidar(meas_package);
+  }
+  else if (use_radar_ && meas_package.sensor_type_ == MeasurementPackage::RADAR)
+  {
+    UpdateRadar(meas_package);
+  }
 
   previous_timestamp_ = meas_package.timestamp_;
 }

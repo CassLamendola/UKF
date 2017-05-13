@@ -28,7 +28,7 @@ UKF::UKF() {
   std_a_ = 1.0;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = .515;
+  std_yawdd_ = 0.5;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -309,10 +309,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     
-    //angle normalization
-    //while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    //while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
-    
     VectorXd z_diff = Zsig.col(i) - z_pred;
     Tc += weights_(i) * x_diff * z_diff.transpose();
   }
@@ -362,18 +358,24 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     double p_y = Xsig_pred_(1,i);
     double v = Xsig_pred_(2,i);
     double yaw = Xsig_pred_(3,i);
+    double rho = sqrt((p_x*p_x) + (p_y*p_y));
+    double phi = 0.0;
+    double rho_dot = 0.0;
 
     //check for division by 0
-    //if ((p_x!=0) && (p_y!=0))
-    double p = sqrt(p_x*p_x + p_y*p_y);
-    if (p < 0.00001)
+    if (fabs(p_x) > 0.001)
     {
-      p = 0.00001;
+      phi = atan2(p_y, p_x);
+    }
+
+    if (fabs(rho) > 0.001)
+    {
+      rho_dot = (p_x * cos(yaw) * v + p_y * sin(yaw) * v) / rho;
     }
     
-    Zsig(0,i) = p;
-    Zsig(1,i) = atan2(p_y, p_x);
-    Zsig(2,i) = ((p_x*cos(yaw)*v) + (p_y*sin(yaw)*v))/p;
+    Zsig(0,i) = rho;
+    Zsig(1,i) = phi;
+    Zsig(2,i) = rho_dot;
   }
 
   //calculate mean predicted measurement

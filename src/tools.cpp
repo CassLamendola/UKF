@@ -16,14 +16,15 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   
   if(estimations.size()==0 || estimations.size()!=ground_truth.size())
 	{
-	  std::cerr << "estimations vector is empty or wrong size."
+	  std::cerr << "estimations vector is empty or wrong size.";
 	  return rmse;
 	}
 	//accumulate squared residuals
-	for(int i=0; i < estimations.size(); ++i){
+	for(int i=0; i < estimations.size(); ++i)
+	{
     VectorXd residual = estimations[i] - ground_truth[i];
     residual = residual.array() * residual.array();
-		rmse += residual;
+	  rmse += residual;
 	}
 
 	rmse = rmse/estimations.size();

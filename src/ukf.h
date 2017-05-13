@@ -74,6 +74,9 @@ public:
   ///* the current NIS for laser
   double NIS_laser_;
 
+  // Initialize time
+  float previous_timestamp_ = 0.0;
+
   /**
    * Constructor
    */

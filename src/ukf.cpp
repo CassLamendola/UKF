@@ -85,8 +85,8 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     previous_timestamp_ = meas_package.timestamp_;
 
     // Initialize the state and covariance matrix with the first measurement
-    float p_x = meas_package.raw_measurements_[0];
-    float p_y = meas_package.raw_measurements_[1];
+    float p_x = meas_package.raw_measurements_(0);
+    float p_y = meas_package.raw_measurements_(1);
     if (meas_package.sensor_type_ == MeasurementPackage::LASER)
     {
       x_ << p_x, p_y, 0, 0, 0;
@@ -95,15 +95,15 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     {
       float rho = p_x * cos(p_y);
       float phi = p_x * sin(p_y);
-      float rho_dot = meas_package.raw_measurements_[2];
+      float rho_dot = meas_package.raw_measurements_(2);
       x_ << rho, phi, 0, 0, 0;
     }
 
     // Initial state covariance matrix P  
     P_ << 1, 0, 0, 0, 0,
           0, 1, 0, 0, 0,
-          0, 0, 1000, 0, 0,
-          0, 0, 0, 100, 0,
+          0, 0, 1, 0, 0,
+          0, 0, 0, 1, 0,
           0, 0, 0, 0, 1;
 
     is_initialized_ = true;
@@ -116,15 +116,24 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
   // Call Prediction step
   Prediction(delta_t);
+  std::cout << "Prediction:" << std::endl;
+  std::cout << x_ << std::endl;
+  std::cout << " " << std::endl;
 
   // Call Update step
   if (use_laser_ && meas_package.sensor_type_ == MeasurementPackage::LASER)
   {
     UpdateLidar(meas_package);
+    std::cout << "Lidar Update:" << std::endl;
+    std::cout << x_ << std::endl;
+    std::cout << " " << std::endl;
   }
   else if (use_radar_ && meas_package.sensor_type_ == MeasurementPackage::RADAR)
   {
     UpdateRadar(meas_package);
+    std::cout << "Radar Update:" << std::endl;
+    std::cout << x_ << std::endl;
+    std::cout << " " << std::endl;
   }
 }
 
@@ -363,15 +372,17 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     double rho_dot = 0.0;
 
     //check for division by 0
-    if (fabs(p_x) > 0.001)
+    if (fabs(p_x) < 0.001)
     {
-      phi = atan2(p_y, p_x);
+      p_x = 0.001;
     }
+    phi = atan2(p_y, p_x);
 
-    if (fabs(rho) > 0.001)
+    if (fabs(rho) < 0.001)
     {
-      rho_dot = (p_x * cos(yaw) * v + p_y * sin(yaw) * v) / rho;
+      rho = 0.001;
     }
+    rho_dot = (p_x * cos(yaw) * v + p_y * sin(yaw) * v) / rho;
     
     Zsig(0,i) = rho;
     Zsig(1,i) = phi;

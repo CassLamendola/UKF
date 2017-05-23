@@ -75,7 +75,7 @@ public:
   double NIS_laser_;
 
   // Initialize time
-  float previous_timestamp_ = 0.0;
+  long long previous_timestamp_ = 0;
 
   /**
    * Constructor

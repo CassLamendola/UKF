@@ -28,7 +28,7 @@ UKF::UKF() {
   std_a_ = 1.0;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.5;
+  std_yawdd_ = M_PI/8;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -96,7 +96,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       float rho = p_x * cos(p_y);
       float phi = p_x * sin(p_y);
       float rho_dot = meas_package.raw_measurements_(2);
-      x_ << rho, phi, 0, 0, 0;
+      x_ << rho, phi, rho_dot, 0, 0;
     }
 
     // Initial state covariance matrix P  
@@ -114,26 +114,18 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
   previous_timestamp_ = meas_package.timestamp_;
 
-  // Call Prediction step
-  Prediction(delta_t);
-  std::cout << "Prediction:" << std::endl;
-  std::cout << x_ << std::endl;
-  std::cout << " " << std::endl;
-
-  // Call Update step
+  // Call Update step after prediction
   if (use_laser_ && meas_package.sensor_type_ == MeasurementPackage::LASER)
   {
+    // Call Prediction step
+    Prediction(delta_t);
     UpdateLidar(meas_package);
-    std::cout << "Lidar Update:" << std::endl;
-    std::cout << x_ << std::endl;
-    std::cout << " " << std::endl;
   }
-  else if (use_radar_ && meas_package.sensor_type_ == MeasurementPackage::RADAR)
+  if (use_radar_ && meas_package.sensor_type_ == MeasurementPackage::RADAR)
   {
+    // Call Prediction step
+    Prediction(delta_t);
     UpdateRadar(meas_package);
-    std::cout << "Radar Update:" << std::endl;
-    std::cout << x_ << std::endl;
-    std::cout << " " << std::endl;
   }
 }
 
@@ -372,9 +364,11 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     double rho_dot = 0.0;
 
     //check for division by 0
-    if (fabs(p_x) < 0.001)
+    if ((fabs(p_x) < 0.001) && (fabs(p_y) < 0.001))
     {
-      p_x = 0.001;
+      if (fabs(p_x) < 0.001)
+        {p_x = 0.001;}
+      else {p_y = 0.001;}
     }
     phi = atan2(p_y, p_x);
 
